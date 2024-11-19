@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
@@ -21,7 +22,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ecom.entities.Category;
+import com.ecom.entities.Product;
 import com.ecom.services.CategoryService;
+import com.ecom.services.ProductService;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -32,13 +35,19 @@ public class AdminController {
     @Autowired
     private CategoryService categoryService;
 
+    @Autowired
+    private ProductService productService;
+
     @GetMapping("/")
     public String adminIndexPage() {
         return "admin/index";
     }
 
     @GetMapping("/loadAddProduct")
-    public String loadAddProduct() {
+    public String loadAddProduct(Model model) {
+
+        List<Category> categories = categoryService.getAllCategory();
+        model.addAttribute("categories", categories);
         return "admin/add_product";
     }
 
@@ -106,40 +115,71 @@ public class AdminController {
     }
 
     @PostMapping("/updateCategory")
-	public String updateCategory(@ModelAttribute Category category, @RequestParam("file") MultipartFile file,
-			HttpSession session) throws IOException {
+    public String updateCategory(@ModelAttribute Category category, @RequestParam("file") MultipartFile file,
+            HttpSession session) throws IOException {
 
-		Category oldCategory = categoryService.getCategoryById(category.getId());
+        Category oldCategory = categoryService.getCategoryById(category.getId());
 
-		String imageName = file.isEmpty() ? oldCategory.getImageName() : file.getOriginalFilename();
+        String imageName = file.isEmpty() ? oldCategory.getImageName() : file.getOriginalFilename();
 
-		if (!ObjectUtils.isEmpty(category)) {
+        if (!ObjectUtils.isEmpty(category)) {
 
-			oldCategory.setName(category.getName());
-			oldCategory.setIsActive(category.getIsActive());
-			oldCategory.setImageName(imageName);
-		}
+            oldCategory.setName(category.getName());
+            oldCategory.setIsActive(category.getIsActive());
+            oldCategory.setImageName(imageName);
+        }
 
-		Category updateCategory = categoryService.saveCategory(oldCategory);
+        Category updateCategory = categoryService.saveCategory(oldCategory);
 
-		if (!ObjectUtils.isEmpty(updateCategory)) {
+        if (!ObjectUtils.isEmpty(updateCategory)) {
 
-			if (!file.isEmpty()) {
-				File saveFile = new ClassPathResource("static/img").getFile();
+            if (!file.isEmpty()) {
+                File saveFile = new ClassPathResource("static/img").getFile();
 
-				Path path = Paths.get(saveFile.getAbsolutePath() + File.separator + "category_img" + File.separator
-						+ file.getOriginalFilename());
+                Path path = Paths.get(saveFile.getAbsolutePath() + File.separator + "category_img" + File.separator
+                        + file.getOriginalFilename());
 
-				// System.out.println(path);
-				Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
-			}
+                // System.out.println(path);
+                Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+            }
 
-			session.setAttribute("successMsg", "Category update successfully");
-		} else {
-			session.setAttribute("errorMsg", "something wrong on server");
-		}
+            session.setAttribute("successMsg", "Category update successfully");
+        } else {
+            session.setAttribute("errorMsg", "something wrong on server");
+        }
 
-		return "redirect:/admin/loadEditCategory/" + category.getId();
-	}
+        return "redirect:/admin/loadEditCategory/" + category.getId();
+    }
+
+
+    
+    @PostMapping("/saveProduct")
+    public String saveProduct(@ModelAttribute Product product, @RequestParam("file") MultipartFile image,
+            HttpSession session) throws IOException {
+
+        String imageName = image.isEmpty() ? "default.jpg" : image.getOriginalFilename();
+
+        product.setImage(imageName);
+
+        Product saveProduct = productService.saveProduct(product);
+
+        if (!ObjectUtils.isEmpty(saveProduct)) {
+
+            File saveFile = new ClassPathResource("static/img").getFile();
+
+            Path path = Paths.get(saveFile.getAbsolutePath() + File.separator + "product_img" + File.separator
+                    + image.getOriginalFilename());
+
+            //System.out.println(path);
+
+            Files.copy(image.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+
+            session.setAttribute("successMsg", "Product Saved Successfully");
+        } else {
+            session.setAttribute("errorMsg", "something wrong on server");
+        }
+
+        return "redirect:/admin/loadAddProduct";
+    }
 
 }
