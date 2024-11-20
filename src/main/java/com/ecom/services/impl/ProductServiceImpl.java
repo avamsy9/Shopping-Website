@@ -97,9 +97,15 @@ public class ProductServiceImpl implements ProductService {
 	}
 
     @Override
-    public List<Product> getAllActiveProducts() {
-        List<Product> products=productRepo.findByIsActiveTrue();
-        return products;
+    public List<Product> getAllActiveProducts(String category) {
+        List<Product> products = null;
+		if (ObjectUtils.isEmpty(category)) {
+			products = productRepo.findByIsActiveTrue();
+		}else {
+			products=productRepo.findByCategory(category);
+		}
+
+		return products;
     }
 
     

@@ -9,5 +9,7 @@ import com.ecom.entities.Product;
 public interface ProductRepo extends JpaRepository<Product,Integer>{
 
     List<Product> findByIsActiveTrue();
+
+    List<Product> findByCategory(String category);
     
 }
