@@ -151,8 +151,6 @@ public class AdminController {
         return "redirect:/admin/loadEditCategory/" + category.getId();
     }
 
-
-    
     @PostMapping("/saveProduct")
     public String saveProduct(@ModelAttribute Product product, @RequestParam("file") MultipartFile image,
             HttpSession session) throws IOException {
@@ -160,6 +158,8 @@ public class AdminController {
         String imageName = image.isEmpty() ? "default.jpg" : image.getOriginalFilename();
 
         product.setImage(imageName);
+        product.setDiscount(0);
+        product.setDiscountPrice(product.getPrice());
 
         Product saveProduct = productService.saveProduct(product);
 
@@ -170,7 +170,7 @@ public class AdminController {
             Path path = Paths.get(saveFile.getAbsolutePath() + File.separator + "product_img" + File.separator
                     + image.getOriginalFilename());
 
-            //System.out.println(path);
+            // System.out.println(path);
 
             Files.copy(image.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
 
@@ -182,46 +182,49 @@ public class AdminController {
         return "redirect:/admin/loadAddProduct";
     }
 
-
     @GetMapping("/products")
-	public String loadViewProduct(Model model) {
-		model.addAttribute("products", productService.getAllProducts());
-		return "admin/products";
-	}
-
+    public String loadViewProduct(Model model) {
+        model.addAttribute("products", productService.getAllProducts());
+        return "admin/products";
+    }
 
     @GetMapping("/deleteProduct/{id}")
-	public String deleteProduct(@PathVariable int id, HttpSession session) {
+    public String deleteProduct(@PathVariable int id, HttpSession session) {
 
-		Boolean deleteProduct = productService.deleteProduct(id);
+        Boolean deleteProduct = productService.deleteProduct(id);
 
-		if (deleteProduct) {
-			session.setAttribute("successMsg", "Product deleted successfully");
-		} else {
-			session.setAttribute("errorMsg", "Something went wrong on server");
-		}
-		return "redirect:/admin/products";
-	}
+        if (deleteProduct) {
+            session.setAttribute("successMsg", "Product deleted successfully");
+        } else {
+            session.setAttribute("errorMsg", "Something went wrong on server");
+        }
+        return "redirect:/admin/products";
+    }
 
     @GetMapping("/editProduct/{id}")
-	public String editProduct(@PathVariable int id, Model model) {
-		model.addAttribute("product", productService.getProductById(id));
-		model.addAttribute("categories", categoryService.getAllCategory());
-		return "admin/edit_product";
-	}
+    public String editProduct(@PathVariable int id, Model model) {
+        model.addAttribute("product", productService.getProductById(id));
+        model.addAttribute("categories", categoryService.getAllCategory());
+        return "admin/edit_product";
+    }
 
     @PostMapping("/updateProduct")
-	public String updateProduct(@ModelAttribute Product product, @RequestParam("file") MultipartFile image,
-			HttpSession session, Model model) {
+    public String updateProduct(@ModelAttribute Product product, @RequestParam("file") MultipartFile image,
+            HttpSession session, Model model) {
 
-		Product updateProduct = productService.updateProduct(product, image);
-		if (!ObjectUtils.isEmpty(updateProduct)) {
-			session.setAttribute("successMsg", "Product update successfully");
-		} else {
-			session.setAttribute("errorMsg", "Something wrong on server");
-		}
+        if (product.getDiscount() < 0 || product.getDiscount() > 100) {
+            session.setAttribute("errorMsg", "invalid Discount");
+        } 
+        else {
+            Product updateProduct = productService.updateProduct(product, image);
+            if (!ObjectUtils.isEmpty(updateProduct)) {
+                session.setAttribute("successMsg", "Product update successfully");
+            } else {
+                session.setAttribute("errorMsg", "Something wrong on server");
+            }
+        }
 
-		return "redirect:/admin/editProduct/" + product.getId();
-	}
+        return "redirect:/admin/editProduct/" + product.getId();
+    }
 
 }
