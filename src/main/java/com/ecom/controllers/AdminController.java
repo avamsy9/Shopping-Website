@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.Principal;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +24,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.ecom.entities.Category;
 import com.ecom.entities.Product;
+import com.ecom.entities.User;
 import com.ecom.services.CategoryService;
 import com.ecom.services.ProductService;
+import com.ecom.services.UserService;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -37,6 +40,22 @@ public class AdminController {
 
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private UserService userService;
+
+    @ModelAttribute
+    public void getUserDetails(Principal p, Model model) {
+
+        if (p != null) {
+            String email = p.getName();
+            User user = userService.getUserByEmail(email);
+            model.addAttribute("user", user);
+        }
+
+        List<Category> allActiveCategory = categoryService.getAllActiveCategory();
+        model.addAttribute("categorys", allActiveCategory);
+    }
 
     @GetMapping("/")
     public String adminIndexPage() {
@@ -214,8 +233,7 @@ public class AdminController {
 
         if (product.getDiscount() < 0 || product.getDiscount() > 100) {
             session.setAttribute("errorMsg", "invalid Discount");
-        } 
-        else {
+        } else {
             Product updateProduct = productService.updateProduct(product, image);
             if (!ObjectUtils.isEmpty(updateProduct)) {
                 session.setAttribute("successMsg", "Product update successfully");
