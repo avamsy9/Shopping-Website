@@ -19,8 +19,11 @@
 
                         <div class="card-header">
                             <p class="fs-4 text-center">Login</p>
+                            
                             <div th:if="${param.error}" class="alert alert-danger text-center">
-                                Invalid Email & Password
+                                <th:block th:if="${session.SPRING_SECURITY_LAST_EXCEPTION!=null}">
+                                    [[${session.SPRING_SECURITY_LAST_EXCEPTION.message}]]
+                                </th:block>
                             </div>
 
                             <div th:if="${param.logout}" class="alert alert-success">
