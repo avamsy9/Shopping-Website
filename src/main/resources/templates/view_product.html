@@ -13,15 +13,15 @@
                 <div class="row">
 
                     <th:block th:if="${session.successMsg}">
-                        <p class="text-success fw-bold">[[${session.successMsg}]]</p>
+                        <p class="text-success alert alert-success text-center" role="alert">[[${session.successMsg}]]</p>
                         <th:block th:text="${@commonServiceImpl.removeSessionMessage()}"></th:block>
                     </th:block>
 
                     <th:block th:if="${session.errorMsg}">
-                        <p class="text-danger fw-bold">[[${session.errorMsg}]]</p>
+                        <p class="text-danger text-center  alert alert-danger">[[${session.errorMsg}]]</p>
                         <th:block th:text="${@commonServiceImpl.removeSessionMessage()}"></th:block>
                     </th:block>
-                    
+
                     <div class="col-md-6 text-end">
                         <img alt="" th:src="@{'/img/product_img/'+${product.image}}" width="330px" height="400px">
                     </div>

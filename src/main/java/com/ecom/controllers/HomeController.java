@@ -66,6 +66,9 @@ public class HomeController {
             String email = p.getName();
             User user = userService.getUserByEmail(email);
             model.addAttribute("user", user);
+            
+            Integer countCart = cartService.getCountCart(user.getId());
+			model.addAttribute("countCart", countCart);
         }
 
         List<Category> allActiveCategory = categoryService.getAllActiveCategory();

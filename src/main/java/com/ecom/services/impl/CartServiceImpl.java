@@ -1,5 +1,6 @@
 package com.ecom.services.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +53,50 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public List<Cart> getCartsByUser(Integer userId) {
-        // TODO Auto-generated method stub
-        return null;
+        
+        List<Cart> carts = cartRepo.findByUserId(userId);
+
+        Double totalOrderPrice = 0.0;
+
+        List<Cart> updateCarts = new ArrayList<>();
+
+        for (Cart c : carts) {
+            Double totalPrice = (c.getProduct().getDiscountPrice() * c.getQuantity());
+            c.setTotalPrice(totalPrice);
+            totalOrderPrice = totalOrderPrice + totalPrice;
+            c.setTotalOrderPrice(totalOrderPrice);
+            updateCarts.add(c);
+        }
+        return updateCarts;
     }
+
+    @Override
+    public Integer getCountCart(Integer userId) {
+        Integer countByUserId = cartRepo.countByUserId(userId);
+        return countByUserId;
+    }
+
+    @Override
+    public void updateQuantity(String sy, Integer cid) {
+
+        Cart cart = cartRepo.findById(cid).get();
+        int updateQuantity;
+
+        if (sy.equalsIgnoreCase("de")) {
+            updateQuantity = cart.getQuantity() - 1;
+
+            if (updateQuantity <= 0) {
+                cartRepo.delete(cart);
+            } else {
+                cart.setQuantity(updateQuantity);
+                cartRepo.save(cart);
+            }
+
+        } else {
+            updateQuantity = cart.getQuantity() + 1;
+            cart.setQuantity(updateQuantity);
+            cartRepo.save(cart);
+        }
+    }
+    
 }
