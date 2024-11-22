@@ -25,9 +25,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ecom.constant.CommonUtil;
+import com.ecom.entities.Cart;
 import com.ecom.entities.Category;
 import com.ecom.entities.Product;
 import com.ecom.entities.User;
+import com.ecom.services.CartService;
 import com.ecom.services.CategoryService;
 import com.ecom.services.ProductService;
 import com.ecom.services.UserService;
@@ -49,6 +51,9 @@ public class HomeController {
     private UserService userService;
 
     @Autowired
+    private CartService cartService;
+    
+    @Autowired
     private CommonUtil commonUtil;
 
     @Autowired
@@ -65,6 +70,18 @@ public class HomeController {
 
         List<Category> allActiveCategory = categoryService.getAllActiveCategory();
         model.addAttribute("categorys", allActiveCategory);
+    }
+
+    @GetMapping("/addCart")
+    public String addToCart(@RequestParam Integer pid, @RequestParam Integer uid, HttpSession session) {
+        Cart saveCart = cartService.saveCart(pid, uid);
+
+        if (ObjectUtils.isEmpty(saveCart)) {
+            session.setAttribute("errorMsg", "Product add to cart failed");
+        } else {
+            session.setAttribute("succMsg", "Product added to cart");
+        }
+        return "redirect:/product/" + pid;
     }
 
     @GetMapping("/")
