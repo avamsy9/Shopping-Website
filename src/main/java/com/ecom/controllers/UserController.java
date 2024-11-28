@@ -9,14 +9,17 @@ import org.springframework.ui.Model;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ecom.entities.Cart;
 import com.ecom.entities.Category;
+import com.ecom.entities.OrderRequest;
 import com.ecom.entities.User;
 import com.ecom.services.CartService;
 import com.ecom.services.CategoryService;
+import com.ecom.services.OrderService;
 import com.ecom.services.UserService;
 
 import jakarta.servlet.http.HttpSession;
@@ -33,6 +36,9 @@ public class UserController {
 
     @Autowired
     private CartService cartService;
+
+    @Autowired
+    private OrderService orderService;
 
     @ModelAttribute
     public void getUserDetails(Principal p, Model model) {
@@ -92,5 +98,19 @@ public class UserController {
 		cartService.updateQuantity(sy, cid);
 		return "redirect:/user/cart";
 	}	
+
+    @GetMapping("/orders")
+	public String orderPage() {
+		return "/user/order";
+	}
+
+    @PostMapping("/save-order")
+	public String saveOrder(@ModelAttribute OrderRequest request, Principal p) {
+
+		User user = getLoggedInUserDetails(p);
+
+		orderService.saveOrder(user.getId(), request);
+		return "/user/success";
+	}
 
 }
