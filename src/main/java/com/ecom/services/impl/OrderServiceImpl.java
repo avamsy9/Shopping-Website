@@ -84,4 +84,9 @@ public class OrderServiceImpl implements OrderService {
 		return false;
 	}
 
+    @Override
+	public List<ProductOrder> getAllOrders() {
+		return productOrderRepo.findAll();
+	}
+
 }

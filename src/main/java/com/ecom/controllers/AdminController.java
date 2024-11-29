@@ -22,11 +22,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.ecom.constant.OrderStatus;
 import com.ecom.entities.Category;
 import com.ecom.entities.Product;
+import com.ecom.entities.ProductOrder;
 import com.ecom.entities.User;
 import com.ecom.services.CartService;
 import com.ecom.services.CategoryService;
+import com.ecom.services.OrderService;
 import com.ecom.services.ProductService;
 import com.ecom.services.UserService;
 
@@ -47,6 +50,9 @@ public class AdminController {
 
     @Autowired
     private CartService cartService;
+
+    @Autowired
+    private OrderService orderService;
     
     @ModelAttribute
     public void getUserDetails(Principal p, Model model) {
@@ -269,6 +275,36 @@ public class AdminController {
 			session.setAttribute("errorMsg", "Something wrong on server");
 		}
 		return "redirect:/admin/users";
+	}
+
+    @GetMapping("/orders")
+	public String getAllOrders(Model model) {
+
+		List<ProductOrder> allOrders = orderService.getAllOrders();
+		model.addAttribute("orders", allOrders);
+		return "/admin/orders";
+	}
+	
+	@PostMapping("/update-order-status")
+	public String updateOrderStatus(@RequestParam Integer id, @RequestParam Integer st, HttpSession session) {
+
+		OrderStatus[] values = OrderStatus.values();
+		String status = null;
+        
+		for (OrderStatus orderSt : values) {
+			if (orderSt.getId().equals(st)) {
+				status = orderSt.getName();
+			}
+		}
+
+		Boolean updateOrder = orderService.updateOrderStatus(id, status);
+
+		if (updateOrder) {
+			session.setAttribute("successMsg", "Status Updated");
+		} else {
+			session.setAttribute("errorMsg", "status not updated");
+		}
+		return "redirect:/admin/orders";
 	}
 
 }
