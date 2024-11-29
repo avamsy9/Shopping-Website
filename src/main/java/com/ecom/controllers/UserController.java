@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.ecom.constant.OrderStatus;
 import com.ecom.entities.Cart;
 import com.ecom.entities.Category;
 import com.ecom.entities.OrderRequest;
+import com.ecom.entities.ProductOrder;
 import com.ecom.entities.User;
 import com.ecom.services.CartService;
 import com.ecom.services.CategoryService;
@@ -56,6 +58,12 @@ public class UserController {
         model.addAttribute("categorys", allActiveCategory);
     }
 
+    private User getLoggedInUserDetails(Principal p) {
+        String email = p.getName();
+        User user = userService.getUserByEmail(email);
+        return user;
+    }
+
     @GetMapping("/")
     public String home() {
         return "user/home";
@@ -87,30 +95,72 @@ public class UserController {
         return "/user/cart";
     }
 
-    private User getLoggedInUserDetails(Principal p) {
-		String email = p.getName();
-		User user = userService.getUserByEmail(email);
-		return user;
-	}
-
     @GetMapping("/cartQuantityUpdate")
-	public String updateCartQuantity(@RequestParam String sy, @RequestParam Integer cid) {
-		cartService.updateQuantity(sy, cid);
-		return "redirect:/user/cart";
-	}	
+    public String updateCartQuantity(@RequestParam String sy, @RequestParam Integer cid) {
+        cartService.updateQuantity(sy, cid);
+        return "redirect:/user/cart";
+    }
 
     @GetMapping("/orders")
-	public String orderPage() {
-		return "/user/order";
-	}
+    public String orderPage(Principal p, Model model) {
+
+        User user = getLoggedInUserDetails(p);
+        List<Cart> carts = cartService.getCartsByUser(user.getId());
+        model.addAttribute("carts", carts);
+        
+        if (carts.size() > 0) {
+            Double orderPrice = carts.get(carts.size() - 1).getTotalOrderPrice();
+            Double totalOrderPrice = carts.get(carts.size() - 1).getTotalOrderPrice() + 250 + 100;
+            model.addAttribute("orderPrice", orderPrice);
+            model.addAttribute("totalOrderPrice", totalOrderPrice);
+        }
+        return "/user/order";
+    }
 
     @PostMapping("/save-order")
-	public String saveOrder(@ModelAttribute OrderRequest request, Principal p) {
+    public String saveOrder(@ModelAttribute OrderRequest request, Principal p) {
 
-		User user = getLoggedInUserDetails(p);
+        User user = getLoggedInUserDetails(p);
 
-		orderService.saveOrder(user.getId(), request);
+        orderService.saveOrder(user.getId(), request);
+        return "redirect:/user/success";
+    }
+
+    @GetMapping("/success")
+	public String loadSuccess() {
 		return "/user/success";
 	}
 
+    @GetMapping("/user-orders")
+	public String myOrder(Model model, Principal p) {
+
+		User loginUser = getLoggedInUserDetails(p);
+
+		List<ProductOrder> orders = orderService.getOrdersByUser(loginUser.getId());
+		model.addAttribute("orders", orders);
+		return "/user/my_orders";
+	}
+
+    @GetMapping("/update-status")
+	public String updateOrderStatus(@RequestParam Integer id, @RequestParam Integer st, HttpSession session) {
+
+		OrderStatus[] values = OrderStatus.values();
+		String status = null;
+
+		for (OrderStatus orderSt : values) {
+			if (orderSt.getId().equals(st)) {
+				status = orderSt.getName();
+			}
+		}
+
+		Boolean updateOrder = orderService.updateOrderStatus(id, status);
+        
+		if (updateOrder) {
+			session.setAttribute("successMsg", "Status Updated");
+		} else {
+			session.setAttribute("errorMsg", "status not updated");
+		}
+		return "redirect:/user/user-orders";
+	}
+    
 }

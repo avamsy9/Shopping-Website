@@ -1,7 +1,9 @@
 package com.ecom.services.impl;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +37,7 @@ public class OrderServiceImpl implements OrderService {
             ProductOrder order = new ProductOrder();
 
             order.setOrderId(UUID.randomUUID().toString());
-            order.setOrderDate(new Date());
+            order.setOrderDate(LocalDate.now());
 
             order.setProduct(cart.getProduct());
             order.setPrice(cart.getProduct().getDiscountPrice());
@@ -63,4 +65,23 @@ public class OrderServiceImpl implements OrderService {
             productOrderRepo.save(order);
         }
     }
+
+    @Override
+	public List<ProductOrder> getOrdersByUser(Integer userId) {
+		List<ProductOrder> orders = productOrderRepo.findByUserId(userId);
+		return orders;
+	}
+
+    @Override
+	public Boolean updateOrderStatus(Integer id, String status) {
+		Optional<ProductOrder> findById = productOrderRepo.findById(id);
+		if (findById.isPresent()) {
+			ProductOrder productOrder = findById.get();
+			productOrder.setStatus(status);
+			productOrderRepo.save(productOrder);
+			return true;
+		}
+		return false;
+	}
+
 }

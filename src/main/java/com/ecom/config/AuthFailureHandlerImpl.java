@@ -20,8 +20,8 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class AuthFailureHandlerImpl extends SimpleUrlAuthenticationFailureHandler {
-    
-    @Autowired
+
+	@Autowired
 	private UserRepo userRepo;
 
 	@Autowired
@@ -32,27 +32,32 @@ public class AuthFailureHandlerImpl extends SimpleUrlAuthenticationFailureHandle
 			AuthenticationException exception) throws IOException, ServletException {
 
 		String email = request.getParameter("username");
+
 		User user = userRepo.findByEmail(email);
 
-		if (user.getIsEnable()) {
-			if (user.getAccountNonLocked()) {
-				if (user.getFailedAttempt() < AppConstant.ATTEMPT_TIME) {
-					userService.increaseFailedAttempt(user);
+		if (user != null) {
+			if (user.getIsEnable()) {
+				if (user.getAccountNonLocked()) {
+					if (user.getFailedAttempt() < AppConstant.ATTEMPT_TIME) {
+						userService.increaseFailedAttempt(user);
+					} else {
+						userService.userAccountLock(user);
+						exception = new LockedException("Your account is locked !! failed attempt 3");
+					}
 				} else {
-					userService.userAccountLock(user);
-					exception = new LockedException("Your account is locked !! failed attempt 3");
+					if (userService.unlockAccountTimeExpired(user)) {
+						exception = new LockedException("Your account is unlocked !! Please try to login");
+					} else {
+						exception = new LockedException("your account is Locked !! Please try after sometimes");
+					}
 				}
 			} else {
-				if (userService.unlockAccountTimeExpired(user)) {
-					exception = new LockedException("Your account is unlocked !! Please try to login");
-				} else {
-					exception = new LockedException("your account is Locked !! Please try after sometimes");
-				}
+				exception = new LockedException("your account is inactive");
 			}
 		} else {
-			exception = new LockedException("your account is inactive");
+			exception = new LockedException("Email & password invalid");
 		}
-		
+
 		super.setDefaultFailureUrl("/signin?error");
 		super.onAuthenticationFailure(request, response, exception);
 	}
