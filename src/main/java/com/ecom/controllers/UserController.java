@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.ecom.constant.CommonUtil;
 import com.ecom.constant.OrderStatus;
 import com.ecom.entities.Cart;
 import com.ecom.entities.Category;
@@ -41,6 +42,9 @@ public class UserController {
 
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private CommonUtil commonUtil;
 
     @ModelAttribute
     public void getUserDetails(Principal p, Model model) {
@@ -118,7 +122,7 @@ public class UserController {
     }
 
     @PostMapping("/save-order")
-    public String saveOrder(@ModelAttribute OrderRequest request, Principal p) {
+    public String saveOrder(@ModelAttribute OrderRequest request, Principal p) throws Exception {
 
         User user = getLoggedInUserDetails(p);
 
@@ -153,9 +157,15 @@ public class UserController {
 			}
 		}
 
-		Boolean updateOrder = orderService.updateOrderStatus(id, status);
+		ProductOrder updateOrder = orderService.updateOrderStatus(id, status);
+
+        try {
+			commonUtil.sendMailForProductOrder(updateOrder, status);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
         
-		if (updateOrder) {
+		if (!ObjectUtils.isEmpty(updateOrder)) {
 			session.setAttribute("successMsg", "Status Updated");
 		} else {
 			session.setAttribute("errorMsg", "status not updated");

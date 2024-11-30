@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.ecom.constant.CommonUtil;
 import com.ecom.constant.OrderStatus;
 import com.ecom.entities.Cart;
 import com.ecom.entities.OrderAddress;
@@ -27,8 +28,11 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private CartRepo cartRepo;
 
+    @Autowired
+    private CommonUtil commonUtil;
+
     @Override
-    public void saveOrder(Integer userid, OrderRequest orderRequest) {
+    public void saveOrder(Integer userid, OrderRequest orderRequest) throws Exception {
 
         List<Cart> carts = cartRepo.findByUserId(userid);
 
@@ -41,6 +45,8 @@ public class OrderServiceImpl implements OrderService {
 
             order.setProduct(cart.getProduct());
             order.setPrice(cart.getProduct().getDiscountPrice());
+
+            order.setTotalPrice(cart.getProduct().getDiscountPrice() * cart.getQuantity());
 
             order.setQuantity(cart.getQuantity());
             order.setUser(cart.getUser());
@@ -62,7 +68,8 @@ public class OrderServiceImpl implements OrderService {
 
             order.setOrderAddress(address);
 
-            productOrderRepo.save(order);
+            ProductOrder saveOrder=productOrderRepo.save(order);
+            commonUtil.sendMailForProductOrder(saveOrder, "Successfully Placed");
         }
     }
 
@@ -73,15 +80,15 @@ public class OrderServiceImpl implements OrderService {
 	}
 
     @Override
-	public Boolean updateOrderStatus(Integer id, String status) {
+	public ProductOrder updateOrderStatus(Integer id, String status) {
 		Optional<ProductOrder> findById = productOrderRepo.findById(id);
 		if (findById.isPresent()) {
 			ProductOrder productOrder = findById.get();
 			productOrder.setStatus(status);
-			productOrderRepo.save(productOrder);
-			return true;
+			ProductOrder updateOrder=productOrderRepo.save(productOrder);
+			return updateOrder;
 		}
-		return false;
+		return null;
 	}
 
     @Override

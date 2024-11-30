@@ -35,6 +35,8 @@ public class ProductOrder {
 
 	private Double price;
 
+	private Double totalPrice;
+
 	private Integer quantity;
 
 	@ManyToOne

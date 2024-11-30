@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.ecom.constant.CommonUtil;
 import com.ecom.constant.OrderStatus;
 import com.ecom.entities.Category;
 import com.ecom.entities.Product;
@@ -53,7 +54,10 @@ public class AdminController {
 
     @Autowired
     private OrderService orderService;
-    
+
+    @Autowired
+    private CommonUtil commonUtil;
+
     @ModelAttribute
     public void getUserDetails(Principal p, Model model) {
 
@@ -63,7 +67,7 @@ public class AdminController {
             model.addAttribute("user", user);
 
             Integer countCart = cartService.getCountCart(user.getId());
-			model.addAttribute("countCart", countCart);
+            model.addAttribute("countCart", countCart);
         }
 
         List<Category> allActiveCategory = categoryService.getAllActiveCategory();
@@ -258,53 +262,58 @@ public class AdminController {
         return "redirect:/admin/editProduct/" + product.getId();
     }
 
-
     @GetMapping("/users")
-	public String getAllUsers(Model m) {
-		List<User> users = userService.getUsers("ROLE_USER");
-		m.addAttribute("users", users);
-		return "admin/users";
-	}
+    public String getAllUsers(Model m) {
+        List<User> users = userService.getUsers("ROLE_USER");
+        m.addAttribute("users", users);
+        return "admin/users";
+    }
 
     @GetMapping("/updateStatus")
-	public String updateUserAccountStatus(@RequestParam Boolean status, @RequestParam Integer id, HttpSession session) {
-		Boolean f = userService.updateAccountStatus(id, status);
-		if (f) {
-			session.setAttribute("successMsg", "Account Status Updated");
-		} else {
-			session.setAttribute("errorMsg", "Something wrong on server");
-		}
-		return "redirect:/admin/users";
-	}
+    public String updateUserAccountStatus(@RequestParam Boolean status, @RequestParam Integer id, HttpSession session) {
+        Boolean f = userService.updateAccountStatus(id, status);
+        if (f) {
+            session.setAttribute("successMsg", "Account Status Updated");
+        } else {
+            session.setAttribute("errorMsg", "Something wrong on server");
+        }
+        return "redirect:/admin/users";
+    }
 
     @GetMapping("/orders")
-	public String getAllOrders(Model model) {
+    public String getAllOrders(Model model) {
 
-		List<ProductOrder> allOrders = orderService.getAllOrders();
-		model.addAttribute("orders", allOrders);
-		return "/admin/orders";
-	}
-	
-	@PostMapping("/update-order-status")
-	public String updateOrderStatus(@RequestParam Integer id, @RequestParam Integer st, HttpSession session) {
+        List<ProductOrder> allOrders = orderService.getAllOrders();
+        model.addAttribute("orders", allOrders);
+        return "/admin/orders";
+    }
 
-		OrderStatus[] values = OrderStatus.values();
-		String status = null;
-        
-		for (OrderStatus orderSt : values) {
-			if (orderSt.getId().equals(st)) {
-				status = orderSt.getName();
-			}
-		}
+    @PostMapping("/update-order-status")
+    public String updateOrderStatus(@RequestParam Integer id, @RequestParam Integer st, HttpSession session) {
 
-		Boolean updateOrder = orderService.updateOrderStatus(id, status);
+        OrderStatus[] values = OrderStatus.values();
+        String status = null;
 
-		if (updateOrder) {
-			session.setAttribute("successMsg", "Status Updated");
-		} else {
-			session.setAttribute("errorMsg", "status not updated");
-		}
-		return "redirect:/admin/orders";
-	}
+        for (OrderStatus orderSt : values) {
+            if (orderSt.getId().equals(st)) {
+                status = orderSt.getName();
+            }
+        }
+
+        ProductOrder updateOrder = orderService.updateOrderStatus(id, status);
+
+        try {
+            commonUtil.sendMailForProductOrder(updateOrder, status);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (!ObjectUtils.isEmpty(updateOrder)) {
+            session.setAttribute("successMsg", "Status Updated");
+        } else {
+            session.setAttribute("errorMsg", "status not updated");
+        }
+        return "redirect:/admin/orders";
+    }
 
 }
