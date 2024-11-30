@@ -4,6 +4,7 @@ import java.security.Principal;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.ObjectUtils;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.ecom.constant.CommonUtil;
 import com.ecom.constant.OrderStatus;
@@ -45,6 +47,9 @@ public class UserController {
 
     @Autowired
     private CommonUtil commonUtil;
+
+    @Autowired
+	private PasswordEncoder passwordEncoder;
 
     @ModelAttribute
     public void getUserDetails(Principal p, Model model) {
@@ -111,7 +116,7 @@ public class UserController {
         User user = getLoggedInUserDetails(p);
         List<Cart> carts = cartService.getCartsByUser(user.getId());
         model.addAttribute("carts", carts);
-        
+
         if (carts.size() > 0) {
             Double orderPrice = carts.get(carts.size() - 1).getTotalOrderPrice();
             Double totalOrderPrice = carts.get(carts.size() - 1).getTotalOrderPrice() + 250 + 100;
@@ -131,46 +136,86 @@ public class UserController {
     }
 
     @GetMapping("/success")
-	public String loadSuccess() {
-		return "/user/success";
-	}
+    public String loadSuccess() {
+        return "/user/success";
+    }
 
     @GetMapping("/user-orders")
-	public String myOrder(Model model, Principal p) {
+    public String myOrder(Model model, Principal p) {
 
-		User loginUser = getLoggedInUserDetails(p);
+        User loginUser = getLoggedInUserDetails(p);
 
-		List<ProductOrder> orders = orderService.getOrdersByUser(loginUser.getId());
-		model.addAttribute("orders", orders);
-		return "/user/my_orders";
-	}
+        List<ProductOrder> orders = orderService.getOrdersByUser(loginUser.getId());
+        model.addAttribute("orders", orders);
+        return "/user/my_orders";
+    }
 
     @GetMapping("/update-status")
-	public String updateOrderStatus(@RequestParam Integer id, @RequestParam Integer st, HttpSession session) {
+    public String updateOrderStatus(@RequestParam Integer id, @RequestParam Integer st, HttpSession session) {
 
-		OrderStatus[] values = OrderStatus.values();
-		String status = null;
+        OrderStatus[] values = OrderStatus.values();
+        String status = null;
 
-		for (OrderStatus orderSt : values) {
-			if (orderSt.getId().equals(st)) {
-				status = orderSt.getName();
-			}
-		}
+        for (OrderStatus orderSt : values) {
+            if (orderSt.getId().equals(st)) {
+                status = orderSt.getName();
+            }
+        }
 
-		ProductOrder updateOrder = orderService.updateOrderStatus(id, status);
+        ProductOrder updateOrder = orderService.updateOrderStatus(id, status);
 
         try {
-			commonUtil.sendMailForProductOrder(updateOrder, status);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-        
-		if (!ObjectUtils.isEmpty(updateOrder)) {
-			session.setAttribute("successMsg", "Status Updated");
+            commonUtil.sendMailForProductOrder(updateOrder, status);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (!ObjectUtils.isEmpty(updateOrder)) {
+            session.setAttribute("successMsg", "Status Updated");
+        } else {
+            session.setAttribute("errorMsg", "status not updated");
+        }
+        return "redirect:/user/user-orders";
+    }
+
+    @GetMapping("/profile")
+    public String profile() {
+        return "/user/profile";
+    }
+
+    @PostMapping("/update-profile")
+    public String updateProfile(@ModelAttribute User user, @RequestParam MultipartFile img, HttpSession session) {
+
+        User updateUserProfile = userService.updateUserProfile(user, img);
+
+        if (ObjectUtils.isEmpty(updateUserProfile)) {
+            session.setAttribute("errorMsg", "Profile not updated");
+        } else {
+            session.setAttribute("successMsg", "Profile Updated");
+        }
+        return "redirect:/user/profile";
+    }
+
+    @PostMapping("/change-password")
+	public String changePassword(@RequestParam String newPassword, @RequestParam String currentPassword, Principal p,
+			HttpSession session) {
+
+		User loggedInUserDetails = getLoggedInUserDetails(p);
+		boolean matches = passwordEncoder.matches(currentPassword, loggedInUserDetails.getPassword());
+
+		if (matches) {
+			String encodePassword = passwordEncoder.encode(newPassword);
+			loggedInUserDetails.setPassword(encodePassword);
+			User updateUser = userService.updateUser(loggedInUserDetails);
+			if (ObjectUtils.isEmpty(updateUser)) {
+				session.setAttribute("errorMsg", "Password not updated !! Error in server");
+			} else {
+				session.setAttribute("successMsg", "Password Updated sucessfully");
+			}
 		} else {
-			session.setAttribute("errorMsg", "status not updated");
+			session.setAttribute("errorMsg", "Current Password incorrect");
 		}
-		return "redirect:/user/user-orders";
+		return "redirect:/user/profile";
 	}
-    
+
 }
