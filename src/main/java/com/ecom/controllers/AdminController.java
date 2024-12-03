@@ -285,6 +285,7 @@ public class AdminController {
 
         List<ProductOrder> allOrders = orderService.getAllOrders();
         model.addAttribute("orders", allOrders);
+        model.addAttribute("srch", false);
         return "/admin/orders";
     }
 
@@ -316,4 +317,26 @@ public class AdminController {
         return "redirect:/admin/orders";
     }
 
+    @GetMapping("/search-order")
+	public String searchProduct(@RequestParam String orderId, Model model, HttpSession session) {
+
+		if (orderId != null && orderId.length() > 0) {
+
+			ProductOrder order = orderService.getOrdersByOrderId(orderId.trim());
+
+			if (ObjectUtils.isEmpty(order)) {
+				session.setAttribute("errorMsg", "Incorrect orderId");
+				model.addAttribute("orderDtls", null);
+			} else {
+				model.addAttribute("orderDtls", order);
+			}
+			model.addAttribute("srch", true);
+
+		} else {
+			List<ProductOrder> allOrders = orderService.getAllOrders();
+			model.addAttribute("orders", allOrders);
+			model.addAttribute("srch", false);
+		}
+		return "/admin/orders";
+	}
 }
