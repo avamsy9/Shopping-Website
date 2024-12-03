@@ -7,27 +7,45 @@
 
 <body>
     <section>
-        <div class="container-fluid mt-5 p-5">
+        <div class="container-fluid mt-4 p-3">
 
-            <div class="card card-sh">
+            <div class="row">
+                <p class="text-center fs-3 mt-2">All Products</p>
+                <hr>
+                <a href="/admin/" class="text-decoration-none">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Back
+                </a>
 
-                <div class="card-header text-center">
-                    <p class="fs-4">View Products</p>
+                <th:block th:if="${session.successMsg}">
+                    <p class="text-success fw-bold">[[${session.successMsg}]]</p>
+                    <th:block th:text="${@commonServiceImpl.removeSessionMessage()}"></th:block>
+                </th:block>
 
-                    <th:block th:if="${session.successMsg}">
-                        <p class="text-success fw-bold">[[${session.successMsg}]]</p>
-                        <th:block th:text="${@commonServiceImpl.removeSessionMessage()}"></th:block>
-                    </th:block>
+                <th:block th:if="${session.errorMsg}">
+                    <p class="text-danger fw-bold">[[${session.errorMsg}]]</p>
+                    <th:block th:text="${@commonServiceImpl.removeSessionMessage()}"></th:block>
+                </th:block>
 
-                    <th:block th:if="${session.errorMsg}">
-                        <p class="text-danger fw-bold">[[${session.errorMsg}]]</p>
-                        <th:block th:text="${@commonServiceImpl.removeSessionMessage()}"></th:block>
-                    </th:block>
+                <div class="col-md-4 p-3">
+
+                    <form action="/admin/products" method="get">
+                        <div class="row">
+                            <div class="col">
+                                <input type="text" class="form-control " name="ch">
+                            </div>
+                            <div class="col">
+                                <button class="btn btn-primary col">Search</button>
+                            </div>
+                        </div>
+                    </form>
 
                 </div>
-                <div class="card-body">
-                    <table class="table">
-                        <thead>
+
+
+                <div class="p-3">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
                             <tr>
                                 <th scope="col">Sl No</th>
                                 <th scope="col">Image</th>
@@ -35,7 +53,7 @@
                                 <th scope="col">Category</th>
                                 <th scope="col">Price</th>
                                 <th scope="col">Discount</th>
-								<th scope="col">Discount Price</th>
+                                <th scope="col">Discount Price</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Stock</th>
                                 <th scope="col">Action</th>
@@ -51,7 +69,7 @@
                                 <td>[[${p.category}]]</td>
                                 <td>[[${p.price}]]</td>
                                 <td>[[${p.discount}]]</td>
-								<td>[[${p.discountPrice}]]</td>
+                                <td>[[${p.discountPrice}]]</td>
                                 <td>[[${p.isActive}]]</td>
                                 <td>[[${p.stock}]]</td>
                                 <td>
@@ -72,6 +90,8 @@
                 </div>
             </div>
         </div>
+
+
 
     </section>
 </body>
