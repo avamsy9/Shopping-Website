@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.domain.Page;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -52,7 +53,7 @@ public class HomeController {
 
     @Autowired
     private CartService cartService;
-    
+
     @Autowired
     private CommonUtil commonUtil;
 
@@ -66,9 +67,9 @@ public class HomeController {
             String email = p.getName();
             User user = userService.getUserByEmail(email);
             model.addAttribute("user", user);
-            
+
             Integer countCart = cartService.getCountCart(user.getId());
-			model.addAttribute("countCart", countCart);
+            model.addAttribute("countCart", countCart);
         }
 
         List<Category> allActiveCategory = categoryService.getAllActiveCategory();
@@ -103,13 +104,29 @@ public class HomeController {
     }
 
     @GetMapping("/products")
-    public String productsPage(Model model, @RequestParam(value = "category", defaultValue = "") String category) {
+    public String productsPage(Model model, @RequestParam(value = "category", defaultValue = "") String category,
+            @RequestParam(name = "pageNo", defaultValue = "0") Integer pageNo,
+            @RequestParam(name = "pageSize", defaultValue = "2") Integer pageSize) {
+
+        // List<Product> products = productService.getAllActiveProducts(category);
+        // model.addAttribute("products", products);
 
         List<Category> categories = categoryService.getAllActiveCategory();
-        List<Product> products = productService.getAllActiveProducts(category);
         model.addAttribute("categories", categories);
-        model.addAttribute("products", products);
         model.addAttribute("paramValue", category);
+
+        Page<Product> page = productService.getAllActiveProductPagination(pageNo, pageSize, category);
+        List<Product> products = page.getContent();
+        model.addAttribute("products", products);
+        model.addAttribute("productsSize", products.size());
+
+        model.addAttribute("pageNo", page.getNumber());
+        model.addAttribute("pageSize", pageSize);
+        model.addAttribute("totalElements", page.getTotalElements());
+        model.addAttribute("totalPages", page.getTotalPages());
+        model.addAttribute("isFirst", page.isFirst());
+        model.addAttribute("isLast", page.isLast());
+
         return "product";
     }
 
@@ -209,15 +226,29 @@ public class HomeController {
     }
 
     @GetMapping("/search")
-	public String searchProduct(@RequestParam String ch, Model model) {
+    public String searchProduct(@RequestParam String ch, Model model,
+            @RequestParam(name = "pageNo", defaultValue = "0") Integer pageNo,
+            @RequestParam(name = "pageSize", defaultValue = "2") Integer pageSize) {
 
-		List<Product> searchProducts = productService.searchProduct(ch);
-		model.addAttribute("products", searchProducts);
+        // List<Product> searchProducts = productService.searchProduct(ch);
+        // model.addAttribute("products", searchProducts);
 
-		List<Category> categories = categoryService.getAllActiveCategory();
-		model.addAttribute("categories", categories);
-        
-		return "product";
-	}
+        List<Category> categories = categoryService.getAllActiveCategory();
+        model.addAttribute("categories", categories);
+
+        Page<Product> page = productService.searchProductPagination(pageNo, pageSize, ch);
+        List<Product> products = page.getContent();
+        model.addAttribute("products", products);
+        model.addAttribute("productsSize", products.size());
+
+        model.addAttribute("pageNo", page.getNumber());
+        model.addAttribute("pageSize", pageSize);
+        model.addAttribute("totalElements", page.getTotalElements());
+        model.addAttribute("totalPages", page.getTotalPages());
+        model.addAttribute("isFirst", page.isFirst());
+        model.addAttribute("isLast", page.isLast());
+
+        return "product";
+    }
 
 }
